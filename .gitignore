@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local development environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Django-specific
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+*.log
+
+# Static and Media files
+# Do not track user-uploaded files or collected static assets
+media/
+staticfiles/
+static_cdn/
+
+# Testing and coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# IDE and OS specific
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+prompts/
+context/
+*claude.md
