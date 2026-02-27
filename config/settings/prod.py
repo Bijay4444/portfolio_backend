@@ -16,8 +16,17 @@ SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+# Static — WhiteNoise CompressedManifestStaticFilesStorage inherited from base.py
+# Run `python manage.py collectstatic` before deploying.
+
+# Media — stored on VPS filesystem, served by nginx directly (not Django).
+# Nginx config must alias /media/ → /path/to/portfolio_backend/media/
+# Django only writes files here via ImageField/FileField uploads.
+MEDIA_URL = "/media/"  # noqa: F405
+MEDIA_ROOT = BASE_DIR / "media"  # noqa: F405
+
 # Database — PostgreSQL required in production
-DATABASES = {
+DATABASES = {  # noqa: F405
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": env("DB_NAME"),  # noqa: F405
