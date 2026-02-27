@@ -8,10 +8,3 @@ INSTALLED_APPS += [  # noqa: F405
     "bijay_dev",
 ]
 
-# Database — SQLite for frictionless local dev
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "dev.sqlite3",  # noqa: F405
-    }
-}

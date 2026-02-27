@@ -7,6 +7,9 @@ config.settings.dev or config.settings.prod.
 
 from __future__ import annotations
 
+import logging
+import logging.config
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -77,8 +80,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database — overridden in dev.py / prod.py
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST", default="localhost"),
+        "PORT": env("DB_PORT", default="5432"),
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
     }
 }
 
@@ -168,3 +178,62 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",  # set to DEBUG to log all SQL queries
+            "propagate": False,
+        },
+        "portfolio": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
+
+# Startup — log which database this instance is pointed at
+# dictConfig must be called here explicitly: Django only processes the LOGGING
+# dict during django.setup(), which runs after settings are fully imported.
+# Without this, the log below fires before any handlers exist and is silently dropped.
+logging.config.dictConfig(LOGGING)
+if not os.environ.get("RUN_MAIN"):
+    _startup_logger = logging.getLogger("portfolio")
+    _db = DATABASES["default"]
+    _startup_logger.info(
+        "Database config loaded | engine=%s name=%s host=%s port=%s",
+        _db["ENGINE"].split(".")[-1],
+        _db["NAME"],
+        _db.get("HOST", "n/a"),
+        _db.get("PORT", "n/a"),
+    )
