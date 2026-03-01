@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.html import format_html, mark_safe
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, ngettext
 
 from core.models import ContactSubmission, Profile, SocialLink
 
@@ -235,7 +235,12 @@ class ContactSubmissionAdmin(admin.ModelAdmin):
         updated = queryset.update(is_read=True)
         self.message_user(
             request,
-            _(f"{updated} submission(s) marked as read."),
+            # ngettext handles singular/plural + no f-string inside _()
+            ngettext(
+                "%(count)d submission marked as read.",
+                "%(count)d submissions marked as read.",
+                updated,
+            ) % {"count": updated},
         )
 
     @admin.action(description=_("Mark selected submissions as unread"))
@@ -251,7 +256,11 @@ class ContactSubmissionAdmin(admin.ModelAdmin):
         updated = queryset.update(is_read=False)
         self.message_user(
             request,
-            _(f"{updated} submission(s) marked as unread."),
+            ngettext(
+                "%(count)d submission marked as unread.",
+                "%(count)d submissions marked as unread.",
+                updated,
+            ) % {"count": updated},
         )
 
     def has_add_permission(self, request: HttpRequest) -> bool:
