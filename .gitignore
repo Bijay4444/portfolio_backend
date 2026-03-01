@@ -35,5 +35,6 @@ htmlcov/
 Thumbs.db
 
 prompts/
+diagrams/
 context/
 *claude.md

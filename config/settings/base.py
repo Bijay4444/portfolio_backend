@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic",  
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     # Third-party
     "corsheaders",
@@ -45,11 +45,12 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "django_filters",
     "drf_spectacular",
+    "django_ckeditor_5",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -240,3 +241,50 @@ if not os.environ.get("RUN_MAIN"):
         _db.get("HOST", "n/a"),
         _db.get("PORT", "n/a"),
     )
+
+# CKEditor 5 configuration
+CKEDITOR_5_CONFIGS: dict = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "|",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+            "codeBlock",
+            "|",
+            "undo",
+            "redo",
+        ],
+        "blockToolbar": [
+            "paragraph",
+            "heading1",
+            "heading2",
+            "heading3",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+        ],
+        "heading": {
+            "options": [
+                {"model": "paragraph", "title": "Paragraph", "class": "ck-heading_paragraph"},
+                {"model": "heading1", "view": "h1", "title": "Heading 1", "class": "ck-heading_heading1"},
+                {"model": "heading2", "view": "h2", "title": "Heading 2", "class": "ck-heading_heading2"},
+                {"model": "heading3", "view": "h3", "title": "Heading 3", "class": "ck-heading_heading3"},
+            ]
+        },
+    }
+}
+
+# CKEditor 5 file uploads — stored in MEDIA_ROOT/ckeditor/uploads/
+CKEDITOR_5_FILE_STORAGE: str = "django.core.files.storage.FileSystemStorage"
+CKEDITOR_5_UPLOAD_PATH: str = "ckeditor/uploads/"
