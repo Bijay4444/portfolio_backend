@@ -144,6 +144,7 @@ class SocialLink(TimeStampedModel):
         INSTAGRAM = "instagram", "Instagram"
         YOUTUBE = "youtube", "YouTube"
         WEBSITE = "website", "Personal Website"
+        MEDIUM = "medium" , "medium"
 
     profile: models.ForeignKey = models.ForeignKey(
         Profile,

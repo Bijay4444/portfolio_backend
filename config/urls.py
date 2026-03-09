@@ -24,7 +24,7 @@ urlpatterns = [
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     # App routers
     path("api/v1/core/", include("core.urls")),
-    path("api/v1/backend/", include("bijay_dev.urls")),
+    path("api/v1/bijay/", include("bijay_dev.urls")),
 ]
 
 # Serve media files via Django in development only.
