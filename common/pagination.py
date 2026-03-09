@@ -84,7 +84,9 @@ def get_paginated_response(
 
     paginator = pagination_class()
     paginated_queryset = paginator.paginate_queryset(queryset, request, view=view)
-    serializer = serializer_class(paginated_queryset, many=True)
+    serializer = serializer_class(
+        paginated_queryset, many=True, context={"request": request}
+    )
 
     meta = {
         "count": paginator.count,

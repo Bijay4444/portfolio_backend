@@ -96,7 +96,7 @@ class Profile(TimeStampedModel):
         Raises:
             ValidationError: If a Profile row already exists and this is a new instance.
         """
-        if not self.pk and Profile.objects.exists():
+        if self._state.adding and Profile.objects.exists():
             raise ValidationError(
                 _("Only one Profile can exist per deployment. Edit the existing one.")
             )
@@ -144,7 +144,7 @@ class SocialLink(TimeStampedModel):
         INSTAGRAM = "instagram", "Instagram"
         YOUTUBE = "youtube", "YouTube"
         WEBSITE = "website", "Personal Website"
-        MEDIUM = "medium" , "medium"
+        MEDIUM = "medium", "Medium"
 
     profile: models.ForeignKey = models.ForeignKey(
         Profile,
