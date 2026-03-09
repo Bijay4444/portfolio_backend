@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     # Third-party
     "corsheaders",
@@ -44,11 +45,12 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "django_filters",
     "drf_spectacular",
+    "django_ckeditor_5",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # CorsMiddleware must come before CommonMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -97,16 +99,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -114,9 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 USE_TZ = True
@@ -125,6 +127,11 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# WhiteNoise — compressed + cached static file serving
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Media — served by Django in dev, served directly by VPS nginx in prod
+# Files land at BASE_DIR/media/ on the VPS filesystem
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -139,10 +146,12 @@ SECURE_BROWSER_XSS_FILTER = True
 # Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
+    # All endpoints are public read-only or contact form.
+    # Individual views override this explicitly — never rely on global default alone.
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+        "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
@@ -159,19 +168,12 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
+        "common.renderers.EnvelopeRenderer",
     ],
+    "EXCEPTION_HANDLER": "common.exception_handler.custom_exception_handler",
 }
 
-# Simple JWT
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
-
-#drf-spectacular (OpenAPI schema)
+# drf-spectacular (OpenAPI schema)
 SPECTACULAR_SETTINGS = {
     "TITLE": "Portfolio Backend API",
     "DESCRIPTION": "REST API powering three developer portfolio sites.",
@@ -237,3 +239,157 @@ if not os.environ.get("RUN_MAIN"):
         _db.get("HOST", "n/a"),
         _db.get("PORT", "n/a"),
     )
+
+# CKEditor 5 configuration
+CKEDITOR_5_CONFIGS: dict = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "|",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+            "codeBlock",
+            "|",
+            "undo",
+            "redo",
+        ],
+        "blockToolbar": [
+            "paragraph",
+            "heading1",
+            "heading2",
+            "heading3",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+        ],
+        "heading": {
+            "options": [
+                {
+                    "model": "paragraph",
+                    "title": "Paragraph",
+                    "class": "ck-heading_paragraph",
+                },
+                {
+                    "model": "heading1",
+                    "view": "h1",
+                    "title": "Heading 1",
+                    "class": "ck-heading_heading1",
+                },
+                {
+                    "model": "heading2",
+                    "view": "h2",
+                    "title": "Heading 2",
+                    "class": "ck-heading_heading2",
+                },
+                {
+                    "model": "heading3",
+                    "view": "h3",
+                    "title": "Heading 3",
+                    "class": "ck-heading_heading3",
+                },
+            ]
+        },
+    },
+    "extends": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "subscript",
+            "superscript",
+            "|",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "todoList",
+            "|",
+            "blockQuote",
+            "codeBlock",
+            "insertTable",
+            "horizontalLine",
+            "|",
+            "imageUpload",
+            "|",
+            "undo",
+            "redo",
+        ],
+        "blockToolbar": [
+            "paragraph",
+            "heading1",
+            "heading2",
+            "heading3",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+            "codeBlock",
+            "insertTable",
+        ],
+        "heading": {
+            "options": [
+                {
+                    "model": "paragraph",
+                    "title": "Paragraph",
+                    "class": "ck-heading_paragraph",
+                },
+                {
+                    "model": "heading1",
+                    "view": "h1",
+                    "title": "Heading 1",
+                    "class": "ck-heading_heading1",
+                },
+                {
+                    "model": "heading2",
+                    "view": "h2",
+                    "title": "Heading 2",
+                    "class": "ck-heading_heading2",
+                },
+                {
+                    "model": "heading3",
+                    "view": "h3",
+                    "title": "Heading 3",
+                    "class": "ck-heading_heading3",
+                },
+                {
+                    "model": "heading4",
+                    "view": "h4",
+                    "title": "Heading 4",
+                    "class": "ck-heading_heading4",
+                },
+            ]
+        },
+        "table": {
+            "contentToolbar": [
+                "tableColumn",
+                "tableRow",
+                "mergeTableCells",
+            ]
+        },
+        "image": {
+            "toolbar": [
+                "imageTextAlternative",
+                "imageStyle:inline",
+                "imageStyle:block",
+                "imageStyle:side",
+            ]
+        },
+    },
+}
+
+# CKEditor 5 file uploads — stored in MEDIA_ROOT/ckeditor/uploads/
+CKEDITOR_5_FILE_STORAGE: str = "django.core.files.storage.FileSystemStorage"
+CKEDITOR_5_UPLOAD_PATH: str = "ckeditor/uploads/"

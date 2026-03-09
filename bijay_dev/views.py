@@ -1,3 +1,1062 @@
-from django.shortcuts import render
+"""API views for bijay_dev portfolio models.
 
-# Create your views here.
+Endpoints:
+    GET  /api/v1/bijay/skills/                — list skill categories (nested skills)
+    GET  /api/v1/bijay/skills/{id}/           — retrieve single skill category
+    GET  /api/v1/bijay/tech-stack/            — list all tech stack entries
+    GET  /api/v1/bijay/tech-stack/{id}/       — retrieve single tech stack entry
+    GET  /api/v1/bijay/projects/              — list active projects
+    GET  /api/v1/bijay/projects/{id}/         — retrieve single project
+    GET  /api/v1/bijay/experience/            — list work history
+    GET  /api/v1/bijay/experience/{id}/       — retrieve single experience
+    GET  /api/v1/bijay/education/             — list education entries
+    GET  /api/v1/bijay/education/{id}/        — retrieve single education entry
+    GET  /api/v1/bijay/certifications/        — list certifications
+    GET  /api/v1/bijay/certifications/{id}/   — retrieve single certification
+    GET  /api/v1/bijay/blog/categories/       — list blog categories
+    GET  /api/v1/bijay/blog/tags/             — list blog tags
+    GET  /api/v1/bijay/blog/posts/            — list published blog posts
+    GET  /api/v1/bijay/blog/posts/{slug}/     — retrieve single blog post by slug
+    GET  /api/v1/bijay/reading-list/          — list reading list items
+    GET  /api/v1/bijay/reading-list/{id}/     — retrieve single reading list item
+    GET  /api/v1/bijay/thoughts/              — list thoughts
+    GET  /api/v1/bijay/thoughts/{id}/         — retrieve single thought
+    GET  /api/v1/bijay/books/                 — list books
+    GET  /api/v1/bijay/books/{id}/            — retrieve single book
+
+All endpoints are public (AllowAny). All data is managed via Django Admin.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet
+
+from bijay_dev.models import (
+    BlogCategory,
+    BlogPost,
+    BlogTag,
+    Book,
+    Certification,
+    Education,
+    Experience,
+    Project,
+    ReadingList,
+    SkillCategory,
+    TechStack,
+    Thought,
+)
+from bijay_dev.serializers import (
+    BlogCategoryOutputSerializer,
+    BlogPostDetailOutputSerializer,
+    BlogPostListOutputSerializer,
+    BlogTagOutputSerializer,
+    BookOutputSerializer,
+    CertificationOutputSerializer,
+    EducationOutputSerializer,
+    ExperienceOutputSerializer,
+    ProjectOutputSerializer,
+    ReadingListOutputSerializer,
+    SkillCategoryOutputSerializer,
+    TechStackOutputSerializer,
+    ThoughtOutputSerializer,
+)
+from common.constants import LoggerNames
+from common.pagination import LimitOffsetPagination, get_paginated_response
+from common.responses import success_response
+
+logger = logging.getLogger(LoggerNames.PORTFOLIO)
+
+
+# Skills & Tech Stack
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List skill categories with nested skills",
+        description=(
+            "Returns all skill categories, each containing its nested TechStack "
+            "entries ordered by display order. Used to render the Skills section."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=SkillCategoryOutputSerializer(many=True),
+                description="Skill categories retrieved successfully.",
+            ),
+        },
+        tags=["bijay:skills"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single skill category",
+        description="Returns a single skill category with its nested skills by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=SkillCategoryOutputSerializer,
+                description="Skill category retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Skill category not found."),
+        },
+        tags=["bijay:skills"],
+    ),
+)
+class SkillCategoryViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for skill categories with nested tech stack entries.
+
+    Prefetches skills to avoid N+1 queries on the nested serializer.
+    """
+
+    serializer_class = SkillCategoryOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return all skill categories with prefetched skills.
+
+        Returns:
+            QuerySet of SkillCategory instances ordered by display order.
+        """
+        return SkillCategory.objects.prefetch_related("skills").order_by(
+            "order", "name"
+        )
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of skill categories.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with nested skill categories.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=SkillCategoryOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single skill category by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the skill category data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={"request": request})
+        return success_response(data=serializer.data)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all tech stack entries",
+        description=(
+            "Returns all tech stack / skill entries across all categories. "
+            "Filter with ?is_featured=true for featured skills only."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=TechStackOutputSerializer(many=True),
+                description="Tech stack entries retrieved successfully.",
+            ),
+        },
+        tags=["bijay:skills"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single tech stack entry",
+        description="Returns a single tech stack entry by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=TechStackOutputSerializer,
+                description="Tech stack entry retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Tech stack entry not found."),
+        },
+        tags=["bijay:skills"],
+    ),
+)
+class TechStackViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for individual tech stack / skill entries.
+
+    Supports optional ?is_featured=true query param filtering.
+    """
+
+    serializer_class = TechStackOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return tech stack entries with optional featured filter.
+
+        Returns:
+            QuerySet of TechStack instances with category selected.
+        """
+        qs = TechStack.objects.select_related("category").order_by(
+            "category__order", "order", "name"
+        )
+        is_featured = self.request.query_params.get("is_featured")
+        if is_featured is not None and is_featured.lower() in ("true", "1"):
+            qs = qs.filter(is_featured=True)
+        return qs
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of tech stack entries.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with tech stack entries.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=TechStackOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single tech stack entry by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the tech stack entry data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={"request": request})
+        return success_response(data=serializer.data)
+
+
+# Projects
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List active portfolio projects",
+        description=(
+            "Returns paginated active projects with nested tech stack. "
+            "Archived projects are excluded. "
+            "Filter with ?is_featured=true for featured projects only."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=ProjectOutputSerializer(many=True),
+                description="Projects retrieved successfully.",
+            ),
+        },
+        tags=["bijay:projects"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single project",
+        description="Returns a single project by UUID with full details and nested tech stack.",
+        responses={
+            200: OpenApiResponse(
+                response=ProjectOutputSerializer,
+                description="Project retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Project not found."),
+        },
+        tags=["bijay:projects"],
+    ),
+)
+class ProjectViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for portfolio projects.
+
+    Only active projects are returned. Prefetches tech_stack M2M.
+    Supports optional ?is_featured=true query param filtering.
+    """
+
+    serializer_class = ProjectOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return active projects with prefetched tech stack.
+
+        Returns:
+            QuerySet of active Project instances.
+        """
+        qs = (
+            Project.objects.filter(status=Project.Status.ACTIVE)
+            .prefetch_related("tech_stack__category")
+            .order_by("order", "-created_at")
+        )
+        is_featured = self.request.query_params.get("is_featured")
+        if is_featured is not None and is_featured.lower() in ("true", "1"):
+            qs = qs.filter(is_featured=True)
+        return qs
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of active projects.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with project data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=ProjectOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single project by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the project data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={"request": request})
+        return success_response(data=serializer.data)
+
+
+# Experience
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List work history entries",
+        description=(
+            "Returns paginated work experience entries ordered by start date "
+            "(most recent first). Current jobs appear first."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=ExperienceOutputSerializer(many=True),
+                description="Experience entries retrieved successfully.",
+            ),
+        },
+        tags=["bijay:experience"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single experience entry",
+        description="Returns a single work history entry by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=ExperienceOutputSerializer,
+                description="Experience entry retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Experience entry not found."),
+        },
+        tags=["bijay:experience"],
+    ),
+)
+class ExperienceViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for work history entries."""
+
+    serializer_class = ExperienceOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return experience entries ordered by recency.
+
+        Returns:
+            QuerySet of Experience instances, current jobs first.
+        """
+        return Experience.objects.order_by("-is_current", "-start_date")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of experience entries.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with experience data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=ExperienceOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single experience entry by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the experience data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+# Education
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List education entries",
+        description=(
+            "Returns paginated education entries ordered by start date "
+            "(most recent first)."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=EducationOutputSerializer(many=True),
+                description="Education entries retrieved successfully.",
+            ),
+        },
+        tags=["bijay:education"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single education entry",
+        description="Returns a single education entry by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=EducationOutputSerializer,
+                description="Education entry retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Education entry not found."),
+        },
+        tags=["bijay:education"],
+    ),
+)
+class EducationViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for academic history entries."""
+
+    serializer_class = EducationOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return education entries ordered by recency.
+
+        Returns:
+            QuerySet of Education instances.
+        """
+        return Education.objects.order_by("-start_date")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of education entries.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with education data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=EducationOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single education entry by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the education data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+# Certification
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List certifications and achievements",
+        description=(
+            "Returns paginated certifications ordered by issue date "
+            "(most recent first)."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=CertificationOutputSerializer(many=True),
+                description="Certifications retrieved successfully.",
+            ),
+        },
+        tags=["bijay:certifications"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single certification",
+        description="Returns a single certification by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=CertificationOutputSerializer,
+                description="Certification retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Certification not found."),
+        },
+        tags=["bijay:certifications"],
+    ),
+)
+class CertificationViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for certificates and achievements."""
+
+    serializer_class = CertificationOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return certifications ordered by issue date.
+
+        Returns:
+            QuerySet of Certification instances.
+        """
+        return Certification.objects.order_by("-issued_date")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of certifications.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with certification data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=CertificationOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single certification by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the certification data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={"request": request})
+        return success_response(data=serializer.data)
+
+
+# Blog
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List blog categories",
+        description="Returns paginated blog categories.",
+        responses={
+            200: OpenApiResponse(
+                response=BlogCategoryOutputSerializer(many=True),
+                description="Blog categories retrieved successfully.",
+            ),
+        },
+        tags=["bijay:blog"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single blog category",
+        description="Returns a single blog category by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=BlogCategoryOutputSerializer,
+                description="Blog category retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Blog category not found."),
+        },
+        tags=["bijay:blog"],
+    ),
+)
+class BlogCategoryViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for blog categories."""
+
+    serializer_class = BlogCategoryOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return blog categories ordered by name.
+
+        Returns:
+            QuerySet of BlogCategory instances.
+        """
+        return BlogCategory.objects.order_by("name")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of blog categories.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with blog category data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=BlogCategoryOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single blog category by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the blog category data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List blog tags",
+        description="Returns paginated blog tags.",
+        responses={
+            200: OpenApiResponse(
+                response=BlogTagOutputSerializer(many=True),
+                description="Blog tags retrieved successfully.",
+            ),
+        },
+        tags=["bijay:blog"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single blog tag",
+        description="Returns a single blog tag by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=BlogTagOutputSerializer,
+                description="Blog tag retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Blog tag not found."),
+        },
+        tags=["bijay:blog"],
+    ),
+)
+class BlogTagViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for blog tags."""
+
+    serializer_class = BlogTagOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return blog tags ordered by name.
+
+        Returns:
+            QuerySet of BlogTag instances.
+        """
+        return BlogTag.objects.order_by("name")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of blog tags.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with blog tag data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=BlogTagOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single blog tag by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the blog tag data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List published blog posts",
+        description=(
+            "Returns paginated published blog posts (drafts excluded). "
+            "Ordered by published date (most recent first). "
+            "List view excludes full content for performance — use detail view "
+            "to fetch full post content. "
+            "Filter with ?is_featured=true for featured post only, "
+            "?category=<slug> or ?tag=<slug> for filtering."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=BlogPostListOutputSerializer(many=True),
+                description="Blog posts retrieved successfully.",
+            ),
+        },
+        tags=["bijay:blog"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single blog post by slug",
+        description=(
+            "Returns the full blog post including rich-text content, "
+            "SEO metadata, Open Graph fields, and related posts. "
+            "Increments the view counter."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=BlogPostDetailOutputSerializer,
+                description="Blog post retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Blog post not found."),
+        },
+        tags=["bijay:blog"],
+    ),
+)
+class BlogPostViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for published blog posts.
+
+    List view uses BlogPostListOutputSerializer (lightweight, no content).
+    Detail view uses BlogPostDetailOutputSerializer (full content + SEO).
+    Lookup is by slug, not UUID, for SEO-friendly URLs.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+    lookup_field = "slug"
+
+    def get_serializer_class(self):
+        """Return list or detail serializer based on action.
+
+        Returns:
+            BlogPostListOutputSerializer for list, BlogPostDetailOutputSerializer
+            for retrieve.
+        """
+        if self.action == "retrieve":
+            return BlogPostDetailOutputSerializer
+        return BlogPostListOutputSerializer
+
+    def get_queryset(self):
+        """Return published posts with prefetched relationships.
+
+        Supports query param filters:
+            ?category=<slug>  — filter by category slug
+            ?tag=<slug>       — filter by tag slug
+            ?is_featured=true — only the featured post
+
+        Returns:
+            QuerySet of published BlogPost instances.
+        """
+        qs = (
+            BlogPost.objects.filter(status=BlogPost.Status.PUBLISHED)
+            .prefetch_related("categories", "tags", "related_posts")
+            .order_by("-published_at", "-created_at")
+        )
+
+        category_slug = self.request.query_params.get("category")
+        if category_slug:
+            qs = qs.filter(categories__slug=category_slug)
+
+        tag_slug = self.request.query_params.get("tag")
+        if tag_slug:
+            qs = qs.filter(tags__slug=tag_slug)
+
+        is_featured = self.request.query_params.get("is_featured")
+        if is_featured is not None and is_featured.lower() in ("true", "1"):
+            qs = qs.filter(is_featured=True)
+
+        return qs.distinct()
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of published blog posts.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with blog post list data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=BlogPostListOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single published blog post by slug.
+
+        Increments the view counter atomically on each retrieval.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the full blog post data.
+        """
+        instance = self.get_object()
+        instance.increment_view_count()
+
+        serializer = self.get_serializer(instance, context={"request": request})
+
+        logger.info(
+            "Blog post viewed | slug=%s views=%d",
+            instance.slug,
+            instance.view_count + 1,
+        )
+
+        return success_response(data=serializer.data)
+
+
+# Reading List
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List reading list items",
+        description="Returns paginated bookmarked articles ordered by added date.",
+        responses={
+            200: OpenApiResponse(
+                response=ReadingListOutputSerializer(many=True),
+                description="Reading list items retrieved successfully.",
+            ),
+        },
+        tags=["bijay:reading-list"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single reading list item",
+        description="Returns a single reading list item by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=ReadingListOutputSerializer,
+                description="Reading list item retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Reading list item not found."),
+        },
+        tags=["bijay:reading-list"],
+    ),
+)
+class ReadingListViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for bookmarked articles and links."""
+
+    serializer_class = ReadingListOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return reading list items ordered by added date.
+
+        Returns:
+            QuerySet of ReadingList instances.
+        """
+        return ReadingList.objects.order_by("-added_date", "-created_at")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of reading list items.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with reading list data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=ReadingListOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single reading list item by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the reading list item data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+# Thoughts
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List thoughts",
+        description="Returns paginated personal thoughts ordered by creation date.",
+        responses={
+            200: OpenApiResponse(
+                response=ThoughtOutputSerializer(many=True),
+                description="Thoughts retrieved successfully.",
+            ),
+        },
+        tags=["bijay:thoughts"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single thought",
+        description="Returns a single thought by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=ThoughtOutputSerializer,
+                description="Thought retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Thought not found."),
+        },
+        tags=["bijay:thoughts"],
+    ),
+)
+class ThoughtViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for short personal thoughts."""
+
+    serializer_class = ThoughtOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return thoughts ordered by creation date.
+
+        Returns:
+            QuerySet of Thought instances.
+        """
+        return Thought.objects.order_by("-created_at")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of thoughts.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with thought data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=ThoughtOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single thought by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the thought data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
+
+
+# Books
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List books",
+        description="Returns paginated books with reading progress.",
+        responses={
+            200: OpenApiResponse(
+                response=BookOutputSerializer(many=True),
+                description="Books retrieved successfully.",
+            ),
+        },
+        tags=["bijay:books"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single book",
+        description="Returns a single book by UUID.",
+        responses={
+            200: OpenApiResponse(
+                response=BookOutputSerializer,
+                description="Book retrieved successfully.",
+            ),
+            404: OpenApiResponse(description="Book not found."),
+        },
+        tags=["bijay:books"],
+    ),
+)
+class BookViewSet(ReadOnlyModelViewSet):
+    """Read-only ViewSet for books with reading progress."""
+
+    serializer_class = BookOutputSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = []
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        """Return books ordered by creation date.
+
+        Returns:
+            QuerySet of Book instances.
+        """
+        return Book.objects.order_by("-created_at")
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return paginated list of books.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Paginated success response with book data.
+        """
+        return get_paginated_response(
+            pagination_class=LimitOffsetPagination,
+            serializer_class=BookOutputSerializer,
+            queryset=self.get_queryset(),
+            request=request,
+            view=self,
+        )
+
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Return a single book by pk.
+
+        Args:
+            request: The incoming DRF request.
+
+        Returns:
+            Success response with the book data.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
