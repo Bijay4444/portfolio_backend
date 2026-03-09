@@ -7,9 +7,12 @@ Usage:
 
 from __future__ import annotations
 
+import io
 import logging
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand, CommandParser
+from PIL import Image
 
 from core.models import ContactSubmission, Profile, SocialLink
 
@@ -79,6 +82,7 @@ class Command(BaseCommand):
                 "<strong>REST API</strong> design. I enjoy solving hard problems "
                 "with clean, well-tested code.</p>"
             ),
+            avatar=self._generate_placeholder_avatar(),
             role="Backend Engineer",
             email="bijay@example.com",
             phone="+977-9800000000",
@@ -89,6 +93,27 @@ class Command(BaseCommand):
         profile.save()
         self.stdout.write(self.style.SUCCESS(f"  Created Profile: {profile}"))
         return profile
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _generate_placeholder_avatar() -> SimpleUploadedFile:
+        """Generate a 400×400 placeholder avatar PNG in memory.
+
+        Returns:
+            A SimpleUploadedFile containing the PNG bytes.
+        """
+        img = Image.new("RGB", (400, 400), color=(59, 130, 246))  # blue-500
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return SimpleUploadedFile(
+            name="seed_avatar.png",
+            content=buf.read(),
+            content_type="image/png",
+        )
 
     # ------------------------------------------------------------------
     # Social Links

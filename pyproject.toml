@@ -35,5 +35,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = []
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings.bijay"
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
 python_files = ["tests.py", "test_*.py"]
