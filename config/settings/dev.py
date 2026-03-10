@@ -6,6 +6,7 @@ from .base import *  # noqa: F401, F403
 INSTALLED_APPS += [  # noqa: F405
     "core",
     "bijay_dev",
+    "shrishant_dev",
 ]
 
 # Static — use simple storage in dev (no hashing, faster iteration)
