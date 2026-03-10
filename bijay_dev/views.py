@@ -38,6 +38,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from bijay_dev.filters import (
+    BlogPostFilter,
+    BookFilter,
+    ExperienceFilter,
+    ProjectFilter,
+    TechStackFilter,
+)
 from bijay_dev.models import (
     BlogCategory,
     BlogPost,
@@ -161,7 +168,8 @@ class SkillCategoryViewSet(ReadOnlyModelViewSet):
         summary="List all tech stack entries",
         description=(
             "Returns all tech stack / skill entries across all categories. "
-            "Filter with ?is_featured=true for featured skills only."
+            "Supports filtering by is_featured and category, "
+            "ordering by order/name/created_at, and search by name."
         ),
         responses={
             200: OpenApiResponse(
@@ -187,27 +195,26 @@ class SkillCategoryViewSet(ReadOnlyModelViewSet):
 class TechStackViewSet(ReadOnlyModelViewSet):
     """Read-only ViewSet for individual tech stack / skill entries.
 
-    Supports optional ?is_featured=true query param filtering.
+    Supports filtering via django-filter, ordering, and search.
     """
 
     serializer_class = TechStackOutputSerializer
     permission_classes = [AllowAny]
     throttle_classes = []
     pagination_class = LimitOffsetPagination
+    filterset_class = TechStackFilter
+    ordering_fields = ("order", "name", "created_at")
+    search_fields = ("name",)
 
     def get_queryset(self):
-        """Return tech stack entries with optional featured filter.
+        """Return tech stack entries with category selected.
 
         Returns:
-            QuerySet of TechStack instances with category selected.
+            QuerySet of TechStack instances ordered by category and display order.
         """
-        qs = TechStack.objects.select_related("category").order_by(
+        return TechStack.objects.select_related("category").order_by(
             "category__order", "order", "name"
         )
-        is_featured = self.request.query_params.get("is_featured")
-        if is_featured is not None and is_featured.lower() in ("true", "1"):
-            qs = qs.filter(is_featured=True)
-        return qs
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Return paginated list of tech stack entries.
@@ -218,10 +225,11 @@ class TechStackViewSet(ReadOnlyModelViewSet):
         Returns:
             Paginated success response with tech stack entries.
         """
+        queryset = self.filter_queryset(self.get_queryset())
         return get_paginated_response(
             pagination_class=LimitOffsetPagination,
             serializer_class=TechStackOutputSerializer,
-            queryset=self.get_queryset(),
+            queryset=queryset,
             request=request,
             view=self,
         )
@@ -248,7 +256,8 @@ class TechStackViewSet(ReadOnlyModelViewSet):
         description=(
             "Returns paginated active projects with nested tech stack. "
             "Archived projects are excluded. "
-            "Filter with ?is_featured=true for featured projects only."
+            "Supports filtering by is_featured and tech_stack, "
+            "ordering by order/created_at, and search by title."
         ),
         responses={
             200: OpenApiResponse(
@@ -275,13 +284,16 @@ class ProjectViewSet(ReadOnlyModelViewSet):
     """Read-only ViewSet for portfolio projects.
 
     Only active projects are returned. Prefetches tech_stack M2M.
-    Supports optional ?is_featured=true query param filtering.
+    Supports filtering via django-filter, ordering, and search.
     """
 
     serializer_class = ProjectOutputSerializer
     permission_classes = [AllowAny]
     throttle_classes = []
     pagination_class = LimitOffsetPagination
+    filterset_class = ProjectFilter
+    ordering_fields = ("order", "created_at")
+    search_fields = ("title",)
 
     def get_queryset(self):
         """Return active projects with prefetched tech stack.
@@ -289,15 +301,11 @@ class ProjectViewSet(ReadOnlyModelViewSet):
         Returns:
             QuerySet of active Project instances.
         """
-        qs = (
+        return (
             Project.objects.filter(status=Project.Status.ACTIVE)
             .prefetch_related("tech_stack__category")
             .order_by("order", "-created_at")
         )
-        is_featured = self.request.query_params.get("is_featured")
-        if is_featured is not None and is_featured.lower() in ("true", "1"):
-            qs = qs.filter(is_featured=True)
-        return qs
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Return paginated list of active projects.
@@ -308,10 +316,11 @@ class ProjectViewSet(ReadOnlyModelViewSet):
         Returns:
             Paginated success response with project data.
         """
+        queryset = self.filter_queryset(self.get_queryset())
         return get_paginated_response(
             pagination_class=LimitOffsetPagination,
             serializer_class=ProjectOutputSerializer,
-            queryset=self.get_queryset(),
+            queryset=queryset,
             request=request,
             view=self,
         )
@@ -361,12 +370,17 @@ class ProjectViewSet(ReadOnlyModelViewSet):
     ),
 )
 class ExperienceViewSet(ReadOnlyModelViewSet):
-    """Read-only ViewSet for work history entries."""
+    """Read-only ViewSet for work history entries.
+
+    Supports filtering by is_current and ordering by start_date.
+    """
 
     serializer_class = ExperienceOutputSerializer
     permission_classes = [AllowAny]
     throttle_classes = []
     pagination_class = LimitOffsetPagination
+    filterset_class = ExperienceFilter
+    ordering_fields = ("start_date",)
 
     def get_queryset(self):
         """Return experience entries ordered by recency.
@@ -385,10 +399,11 @@ class ExperienceViewSet(ReadOnlyModelViewSet):
         Returns:
             Paginated success response with experience data.
         """
+        queryset = self.filter_queryset(self.get_queryset())
         return get_paginated_response(
             pagination_class=LimitOffsetPagination,
             serializer_class=ExperienceOutputSerializer,
-            queryset=self.get_queryset(),
+            queryset=queryset,
             request=request,
             view=self,
         )
@@ -715,8 +730,9 @@ class BlogTagViewSet(ReadOnlyModelViewSet):
             "Ordered by published date (most recent first). "
             "List view excludes full content for performance — use detail view "
             "to fetch full post content. "
-            "Filter with ?is_featured=true for featured post only, "
-            "?category=<slug> or ?tag=<slug> for filtering."
+            "Supports filtering by category, tag, and is_featured, "
+            "ordering by published_at/view_count/created_at, "
+            "and search by title/excerpt."
         ),
         responses={
             200: OpenApiResponse(
@@ -749,12 +765,16 @@ class BlogPostViewSet(ReadOnlyModelViewSet):
     List view uses BlogPostListOutputSerializer (lightweight, no content).
     Detail view uses BlogPostDetailOutputSerializer (full content + SEO).
     Lookup is by slug, not UUID, for SEO-friendly URLs.
+    Supports filtering via django-filter, ordering, and search.
     """
 
     permission_classes = [AllowAny]
     throttle_classes = []
     pagination_class = LimitOffsetPagination
     lookup_field = "slug"
+    filterset_class = BlogPostFilter
+    ordering_fields = ("published_at", "view_count", "created_at")
+    search_fields = ("title", "excerpt")
 
     def get_serializer_class(self):
         """Return list or detail serializer based on action.
@@ -770,33 +790,14 @@ class BlogPostViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         """Return published posts with prefetched relationships.
 
-        Supports query param filters:
-            ?category=<slug>  — filter by category slug
-            ?tag=<slug>       — filter by tag slug
-            ?is_featured=true — only the featured post
-
         Returns:
             QuerySet of published BlogPost instances.
         """
-        qs = (
+        return (
             BlogPost.objects.filter(status=BlogPost.Status.PUBLISHED)
             .prefetch_related("categories", "tags", "related_posts")
             .order_by("-published_at", "-created_at")
         )
-
-        category_slug = self.request.query_params.get("category")
-        if category_slug:
-            qs = qs.filter(categories__slug=category_slug)
-
-        tag_slug = self.request.query_params.get("tag")
-        if tag_slug:
-            qs = qs.filter(tags__slug=tag_slug)
-
-        is_featured = self.request.query_params.get("is_featured")
-        if is_featured is not None and is_featured.lower() in ("true", "1"):
-            qs = qs.filter(is_featured=True)
-
-        return qs.distinct()
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Return paginated list of published blog posts.
@@ -807,10 +808,11 @@ class BlogPostViewSet(ReadOnlyModelViewSet):
         Returns:
             Paginated success response with blog post list data.
         """
+        queryset = self.filter_queryset(self.get_queryset()).distinct()
         return get_paginated_response(
             pagination_class=LimitOffsetPagination,
             serializer_class=BlogPostListOutputSerializer,
-            queryset=self.get_queryset(),
+            queryset=queryset,
             request=request,
             view=self,
         )
@@ -1016,12 +1018,17 @@ class ThoughtViewSet(ReadOnlyModelViewSet):
     ),
 )
 class BookViewSet(ReadOnlyModelViewSet):
-    """Read-only ViewSet for books with reading progress."""
+    """Read-only ViewSet for books with reading progress.
+
+    Supports filtering by reading progress range and ordering.
+    """
 
     serializer_class = BookOutputSerializer
     permission_classes = [AllowAny]
     throttle_classes = []
     pagination_class = LimitOffsetPagination
+    filterset_class = BookFilter
+    ordering_fields = ("percent_read", "date_started", "created_at")
 
     def get_queryset(self):
         """Return books ordered by creation date.
@@ -1040,10 +1047,11 @@ class BookViewSet(ReadOnlyModelViewSet):
         Returns:
             Paginated success response with book data.
         """
+        queryset = self.filter_queryset(self.get_queryset())
         return get_paginated_response(
             pagination_class=LimitOffsetPagination,
             serializer_class=BookOutputSerializer,
-            queryset=self.get_queryset(),
+            queryset=queryset,
             request=request,
             view=self,
         )
