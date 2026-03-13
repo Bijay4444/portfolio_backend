@@ -206,7 +206,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):
-    """Admin for work history entries."""
+    """Admin for work history entries with CKEditor 5 description."""
 
     list_display = (
         "role",
@@ -259,7 +259,7 @@ class ExperienceAdmin(admin.ModelAdmin):
 
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
-    """Admin for academic history entries."""
+    """Admin for academic history entries with CKEditor 5 description."""
 
     list_display = ("title", "institution", "degree", "field_of_study", "start_date")
     search_fields = ("title", "institution", "degree", "field_of_study")

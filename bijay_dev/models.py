@@ -220,7 +220,7 @@ class Experience(TimeStampedModel):
         title: Entry heading (e.g. "Backend Developer at Acme Corp").
         company: Company or organisation name.
         role: Specific role/position held.
-        description: Responsibilities and achievements (plain text or rich text).
+        description: Responsibilities and achievements edited with CKEditor 5.
         start_date: Month/year the role started.
         end_date: Month/year the role ended. Null when is_current=True.
         is_current: True when this is the current job (hides end_date).
@@ -240,9 +240,12 @@ class Experience(TimeStampedModel):
         max_length=200,
         help_text=_("Specific role/position title held at this company."),
     )
-    description: models.TextField = models.TextField(
+    description: CKEditor5Field = CKEditor5Field(
+        config_name="default",
         blank=True,
-        help_text=_("Key responsibilities and achievements."),
+        help_text=_(
+            "Rich-text responsibilities and achievements. Supports links and lists."
+        ),
     )
     start_date: models.DateField = models.DateField(
         help_text=_("Month/year the role started (day value is ignored)."),
@@ -294,7 +297,7 @@ class Education(TimeStampedModel):
         field_of_study: Subject area (e.g. "Computer Science").
         start_date: Start of the programme.
         end_date: End/graduation date. Null when still ongoing.
-        description: Optional notes, achievements, or highlights.
+        description: Optional notes, achievements, or highlights edited with CKEditor 5.
     """
 
     title: models.CharField = models.CharField(
@@ -325,9 +328,12 @@ class Education(TimeStampedModel):
         blank=True,
         help_text=_("Graduation or end date. Leave blank if still ongoing."),
     )
-    description: models.TextField = models.TextField(
+    description: CKEditor5Field = CKEditor5Field(
+        config_name="default",
         blank=True,
-        help_text=_("Optional notes, achievements, or academic highlights."),
+        help_text=_(
+            "Optional rich-text notes, achievements, or academic highlights."
+        ),
     )
 
     class Meta:
