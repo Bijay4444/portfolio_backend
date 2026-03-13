@@ -36,6 +36,7 @@ class TechStackOutputSerializer(serializers.ModelSerializer):
     Attributes:
         category_name: Denormalised category label for display.
         icon_url: Absolute URL to the icon image (null if not uploaded).
+        icon_cdn: Raw CDN icon URL configured in admin (optional).
     """
 
     category_name: serializers.CharField = serializers.CharField(
@@ -51,6 +52,7 @@ class TechStackOutputSerializer(serializers.ModelSerializer):
             "name",
             "category_name",
             "icon_url",
+            "icon_cdn",
             "is_featured",
             "order",
             "created_at",
@@ -59,20 +61,22 @@ class TechStackOutputSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at", "updated_at")
 
     def get_icon_url(self, obj: TechStack) -> str | None:
-        """Return absolute URL for the icon image.
+        """Return icon URL, preferring uploaded media then CDN URL.
 
         Args:
             obj: The TechStack instance being serialized.
 
         Returns:
-            Absolute URL string, or None if no icon is set.
+            Absolute URL string, CDN URL, or None if neither is set.
         """
-        if not obj.icon:
-            return None
-        request = self.context.get("request")
-        if request is not None:
-            return request.build_absolute_uri(obj.icon.url)
-        return obj.icon.url
+        if obj.icon:
+            request = self.context.get("request")
+            if request is not None:
+                return request.build_absolute_uri(obj.icon.url)
+            return obj.icon.url
+        if obj.icon_cdn:
+            return obj.icon_cdn
+        return None
 
 
 class SkillCategoryOutputSerializer(serializers.ModelSerializer):

@@ -72,6 +72,7 @@ class TechStack(TimeStampedModel):
         category: The SkillCategory this tool belongs to.
         name: Tool or skill name (e.g. "React").
         icon: Uploaded icon image displayed on the portfolio.
+        icon_cdn: Optional CDN icon URL used when no icon file is uploaded.
         is_featured: Highlights this skill in the "key skills" section.
         order: Controls display order within the category.
     """
@@ -90,6 +91,10 @@ class TechStack(TimeStampedModel):
         upload_to="shrishant/techstack/icons/",
         blank=True,
         help_text=_("Icon image. Recommended: SVG/PNG, square, transparent bg."),
+    )
+    icon_cdn: models.URLField = models.URLField(
+        blank=True,
+        help_text=_("Optional CDN URL for icon image when no file is uploaded."),
     )
     is_featured: models.BooleanField = models.BooleanField(
         default=False,

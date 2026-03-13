@@ -49,7 +49,7 @@ class TechStackInline(admin.TabularInline):
 
     model = TechStack
     extra = 1
-    fields = ("name", "icon", "is_featured", "order")
+    fields = ("name", "icon", "icon_cdn", "is_featured", "order")
     ordering = ("order", "name")
 
 
@@ -78,12 +78,13 @@ class TechStackAdmin(admin.ModelAdmin):
         "category",
         "featured_badge",
         "icon_preview",
+        "icon_cdn",
         "order",
         "updated_at",
     )
     list_filter = ("category", "is_featured")
     list_editable = ("order",)
-    search_fields = ("name", "category__name")
+    search_fields = ("name", "category__name", "icon_cdn")
     ordering = ("category__order", "order", "name")
 
     @admin.display(description=_("Featured"), boolean=False)
@@ -97,12 +98,16 @@ class TechStackAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Icon"))
     def icon_preview(self, obj: TechStack) -> str:
-        """Render a small inline preview of the uploaded icon."""
-        if not obj.icon:
+        """Render a small inline preview of the uploaded icon or CDN icon."""
+        if obj.icon:
+            source = obj.icon.url
+        elif obj.icon_cdn:
+            source = obj.icon_cdn
+        else:
             return _("—")
         return format_html(
             '<img src="{}" style="width:24px;height:24px;object-fit:contain;" />',
-            obj.icon.url,
+            source,
         )
 
 
