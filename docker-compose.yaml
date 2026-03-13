@@ -20,7 +20,7 @@ services:
       - .env
     environment:
       DB_HOST: db
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: config.settings.prod
       SECURE_SSL_REDIRECT: "False"
     volumes:
       - ./media:/app/media

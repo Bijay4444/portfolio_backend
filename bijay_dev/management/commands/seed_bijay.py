@@ -110,53 +110,168 @@ class Command(BaseCommand):
                 "name": "Backend",
                 "order": 1,
                 "skills": [
-                    {"name": "Python", "is_featured": True, "order": 1},
-                    {"name": "Django", "is_featured": True, "order": 2},
-                    {"name": "Django REST Framework", "is_featured": True, "order": 3},
-                    {"name": "FastAPI", "is_featured": False, "order": 4},
-                    {"name": "Celery", "is_featured": False, "order": 5},
+                    {
+                        "name": "Python",
+                        "icon_cdn": "https://api.iconify.design/logos:python.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Django",
+                        "icon_cdn": "https://api.iconify.design/logos:django-icon.svg",
+                        "is_featured": True,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Django REST Framework",
+                        "icon_cdn": "https://api.iconify.design/logos:django-icon.svg",
+                        "is_featured": True,
+                        "order": 3,
+                    },
+                    {
+                        "name": "FastAPI",
+                        "icon_cdn": "https://api.iconify.design/logos:fastapi-icon.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
+                    {
+                        "name": "Celery",
+                        "icon_cdn": "https://api.iconify.design/logos:celery.svg",
+                        "is_featured": False,
+                        "order": 5,
+                    },
                 ],
             },
             {
                 "name": "Database",
                 "order": 2,
                 "skills": [
-                    {"name": "PostgreSQL", "is_featured": True, "order": 1},
-                    {"name": "Redis", "is_featured": True, "order": 2},
-                    {"name": "MongoDB", "is_featured": False, "order": 3},
-                    {"name": "SQLite", "is_featured": False, "order": 4},
+                    {
+                        "name": "PostgreSQL",
+                        "icon_cdn": "https://api.iconify.design/logos:postgresql.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Redis",
+                        "icon_cdn": "https://api.iconify.design/logos:redis.svg",
+                        "is_featured": True,
+                        "order": 2,
+                    },
+                    {
+                        "name": "MongoDB",
+                        "icon_cdn": "https://api.iconify.design/logos:mongodb-icon.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "SQLite",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:sqlite.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "DevOps & Cloud",
                 "order": 3,
                 "skills": [
-                    {"name": "Docker", "is_featured": True, "order": 1},
-                    {"name": "Nginx", "is_featured": False, "order": 2},
-                    {"name": "GitHub Actions", "is_featured": False, "order": 3},
-                    {"name": "AWS (EC2, S3, RDS)", "is_featured": False, "order": 4},
-                    {"name": "Linux / VPS", "is_featured": False, "order": 5},
+                    {
+                        "name": "Docker",
+                        "icon_cdn": "https://api.iconify.design/logos:docker-icon.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Nginx",
+                        "icon_cdn": "https://api.iconify.design/logos:nginx.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "GitHub Actions",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:githubactions.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "AWS (EC2, S3, RDS)",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:amazonaws.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
+                    {
+                        "name": "Linux / VPS",
+                        "icon_cdn": "https://api.iconify.design/logos:linux-tux.svg",
+                        "is_featured": False,
+                        "order": 5,
+                    },
                 ],
             },
             {
                 "name": "Tools & Workflow",
                 "order": 4,
                 "skills": [
-                    {"name": "Git", "is_featured": False, "order": 1},
-                    {"name": "VS Code", "is_featured": False, "order": 2},
-                    {"name": "Postman", "is_featured": False, "order": 3},
-                    {"name": "pytest", "is_featured": False, "order": 4},
-                    {"name": "Ruff / Black", "is_featured": False, "order": 5},
+                    {
+                        "name": "Git",
+                        "icon_cdn": "https://api.iconify.design/logos:git-icon.svg",
+                        "is_featured": False,
+                        "order": 1,
+                    },
+                    {
+                        "name": "VS Code",
+                        "icon_cdn": "https://api.iconify.design/logos:visual-studio-code.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Postman",
+                        "icon_cdn": "https://api.iconify.design/logos:postman-icon.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "pytest",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:pytest.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
+                    {
+                        "name": "Ruff / Black",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:ruff.svg",
+                        "is_featured": False,
+                        "order": 5,
+                    },
                 ],
             },
             {
                 "name": "Frontend (Basics)",
                 "order": 5,
                 "skills": [
-                    {"name": "HTML / CSS", "is_featured": False, "order": 1},
-                    {"name": "JavaScript", "is_featured": False, "order": 2},
-                    {"name": "Next.js", "is_featured": False, "order": 3},
-                    {"name": "Tailwind CSS", "is_featured": False, "order": 4},
+                    {
+                        "name": "HTML / CSS",
+                        "icon_cdn": "https://api.iconify.design/logos:html-5.svg",
+                        "is_featured": False,
+                        "order": 1,
+                    },
+                    {
+                        "name": "JavaScript",
+                        "icon_cdn": "https://api.iconify.design/logos:javascript.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Next.js",
+                        "icon_cdn": "https://api.iconify.design/logos:nextjs-icon.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Tailwind CSS",
+                        "icon_cdn": "https://api.iconify.design/logos:tailwindcss-icon.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
         ]
@@ -173,10 +288,14 @@ class Command(BaseCommand):
                     category=category,
                     name=skill_data["name"],
                     defaults={
+                        "icon_cdn": skill_data["icon_cdn"],
                         "is_featured": skill_data["is_featured"],
                         "order": skill_data["order"],
                     },
                 )
+                if tech.icon_cdn != skill_data["icon_cdn"]:
+                    tech.icon_cdn = skill_data["icon_cdn"]
+                    tech.save(update_fields=["icon_cdn", "updated_at"])
                 skill_map[tech.name] = tech
                 if created:
                     logger.debug("Created TechStack: %s", tech)

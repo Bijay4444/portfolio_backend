@@ -168,6 +168,8 @@ class SkillCategoryViewSet(ReadOnlyModelViewSet):
         summary="List all tech stack entries",
         description=(
             "Returns all tech stack / skill entries across all categories. "
+            "Each item includes icon_url (uploaded icon or icon_cdn fallback) "
+            "and the raw icon_cdn value. "
             "Supports filtering by is_featured and category, "
             "ordering by order/name/created_at, and search by name."
         ),
@@ -181,7 +183,10 @@ class SkillCategoryViewSet(ReadOnlyModelViewSet):
     ),
     retrieve=extend_schema(
         summary="Retrieve a single tech stack entry",
-        description="Returns a single tech stack entry by UUID.",
+        description=(
+            "Returns a single tech stack entry by UUID, including icon_url "
+            "(uploaded icon or icon_cdn fallback) and icon_cdn."
+        ),
         responses={
             200: OpenApiResponse(
                 response=TechStackOutputSerializer,

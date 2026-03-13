@@ -103,61 +103,186 @@ class Command(BaseCommand):
                 "name": "Languages",
                 "order": 1,
                 "skills": [
-                    {"name": "JavaScript", "is_featured": True, "order": 1},
-                    {"name": "TypeScript", "is_featured": True, "order": 2},
-                    {"name": "HTML5", "is_featured": False, "order": 3},
-                    {"name": "CSS3", "is_featured": False, "order": 4},
+                    {
+                        "name": "JavaScript",
+                        "icon_cdn": "https://api.iconify.design/logos:javascript.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "TypeScript",
+                        "icon_cdn": "https://api.iconify.design/logos:typescript-icon.svg",
+                        "is_featured": True,
+                        "order": 2,
+                    },
+                    {
+                        "name": "HTML5",
+                        "icon_cdn": "https://api.iconify.design/logos:html-5.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "CSS3",
+                        "icon_cdn": "https://api.iconify.design/logos:css-3.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "Frameworks & Libraries",
                 "order": 2,
                 "skills": [
-                    {"name": "React", "is_featured": True, "order": 1},
-                    {"name": "Next.js", "is_featured": True, "order": 2},
-                    {"name": "Vue.js", "is_featured": False, "order": 3},
-                    {"name": "Svelte", "is_featured": False, "order": 4},
+                    {
+                        "name": "React",
+                        "icon_cdn": "https://api.iconify.design/logos:react.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Next.js",
+                        "icon_cdn": "https://api.iconify.design/logos:nextjs-icon.svg",
+                        "is_featured": True,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Vue.js",
+                        "icon_cdn": "https://api.iconify.design/logos:vue.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Svelte",
+                        "icon_cdn": "https://api.iconify.design/logos:svelte-icon.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "Styling",
                 "order": 3,
                 "skills": [
-                    {"name": "Tailwind CSS", "is_featured": True, "order": 1},
-                    {"name": "Sass / SCSS", "is_featured": False, "order": 2},
-                    {"name": "Styled Components", "is_featured": False, "order": 3},
-                    {"name": "Framer Motion", "is_featured": False, "order": 4},
+                    {
+                        "name": "Tailwind CSS",
+                        "icon_cdn": "https://api.iconify.design/logos:tailwindcss-icon.svg",
+                        "is_featured": True,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Sass / SCSS",
+                        "icon_cdn": "https://api.iconify.design/logos:sass.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Styled Components",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:styledcomponents.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Framer Motion",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:framer.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "Build Tools & Bundlers",
                 "order": 4,
                 "skills": [
-                    {"name": "Vite", "is_featured": False, "order": 1},
-                    {"name": "Webpack", "is_featured": False, "order": 2},
-                    {"name": "ESLint / Prettier", "is_featured": False, "order": 3},
-                    {"name": "Turborepo", "is_featured": False, "order": 4},
+                    {
+                        "name": "Vite",
+                        "icon_cdn": "https://api.iconify.design/logos:vitejs.svg",
+                        "is_featured": False,
+                        "order": 1,
+                    },
+                    {
+                        "name": "Webpack",
+                        "icon_cdn": "https://api.iconify.design/logos:webpack.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "ESLint / Prettier",
+                        "icon_cdn": "https://api.iconify.design/logos:eslint.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Turborepo",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:turborepo.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "Testing",
                 "order": 5,
                 "skills": [
-                    {"name": "Jest", "is_featured": False, "order": 1},
-                    {"name": "React Testing Library", "is_featured": False, "order": 2},
-                    {"name": "Cypress", "is_featured": False, "order": 3},
-                    {"name": "Playwright", "is_featured": False, "order": 4},
+                    {
+                        "name": "Jest",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:jest.svg",
+                        "is_featured": False,
+                        "order": 1,
+                    },
+                    {
+                        "name": "React Testing Library",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:testinglibrary.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Cypress",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:cypress.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Playwright",
+                        "icon_cdn": "https://api.iconify.design/simple-icons:playwright.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
                 ],
             },
             {
                 "name": "Tools & Workflow",
                 "order": 6,
                 "skills": [
-                    {"name": "Git", "is_featured": False, "order": 1},
-                    {"name": "VS Code", "is_featured": False, "order": 2},
-                    {"name": "Figma", "is_featured": False, "order": 3},
-                    {"name": "Vercel", "is_featured": False, "order": 4},
-                    {"name": "Docker", "is_featured": False, "order": 5},
+                    {
+                        "name": "Git",
+                        "icon_cdn": "https://api.iconify.design/logos:git-icon.svg",
+                        "is_featured": False,
+                        "order": 1,
+                    },
+                    {
+                        "name": "VS Code",
+                        "icon_cdn": "https://api.iconify.design/logos:visual-studio-code.svg",
+                        "is_featured": False,
+                        "order": 2,
+                    },
+                    {
+                        "name": "Figma",
+                        "icon_cdn": "https://api.iconify.design/logos:figma.svg",
+                        "is_featured": False,
+                        "order": 3,
+                    },
+                    {
+                        "name": "Vercel",
+                        "icon_cdn": "https://api.iconify.design/logos:vercel-icon.svg",
+                        "is_featured": False,
+                        "order": 4,
+                    },
+                    {
+                        "name": "Docker",
+                        "icon_cdn": "https://api.iconify.design/logos:docker-icon.svg",
+                        "is_featured": False,
+                        "order": 5,
+                    },
                 ],
             },
         ]
@@ -174,10 +299,14 @@ class Command(BaseCommand):
                     category=category,
                     name=skill_data["name"],
                     defaults={
+                        "icon_cdn": skill_data["icon_cdn"],
                         "is_featured": skill_data["is_featured"],
                         "order": skill_data["order"],
                     },
                 )
+                if tech.icon_cdn != skill_data["icon_cdn"]:
+                    tech.icon_cdn = skill_data["icon_cdn"]
+                    tech.save(update_fields=["icon_cdn", "updated_at"])
                 skill_map[tech.name] = tech
                 if created:
                     logger.debug("Created TechStack: %s", tech)
